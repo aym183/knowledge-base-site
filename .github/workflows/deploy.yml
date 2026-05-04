@@ -1,0 +1,66 @@
+name: Deploy Quartz site
+
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [knowledge-base-updated]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout knowledge base into content/
+        uses: actions/checkout@v4
+        with:
+          repository: aym183/obsidian-knowledge-base
+          path: content
+          fetch-depth: 0
+
+      - name: Ensure content/index.md exists
+        run: |
+          if [ ! -f content/index.md ]; then
+            printf -- "---\ntitle: Knowledge Graph\n---\n" > content/index.md
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Quartz
+        run: npx quartz build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
