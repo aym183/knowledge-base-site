@@ -13,7 +13,7 @@ const graphConfig = {
     drag: true,
     zoom: true,
     depth: -1,
-    scale: 1.1,
+    scale: 1.8,
     repelForce: 0.5,
     centerForce: 0.3,
     linkDistance: 30,
@@ -21,12 +21,13 @@ const graphConfig = {
     opacityScale: 1,
     showTags: false,
     removeTags: [],
+    focusOnHover: true,
   },
   globalGraph: {
     drag: true,
     zoom: true,
     depth: -1,
-    scale: 0.9,
+    scale: 1.8,
     repelForce: 0.5,
     centerForce: 0.3,
     linkDistance: 30,
@@ -34,6 +35,7 @@ const graphConfig = {
     opacityScale: 1,
     showTags: false,
     removeTags: [],
+    focusOnHover: true,
   },
 }
 
