@@ -285,20 +285,28 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
       if (hoveredNodeId === nodeId) {
         tweenGroup.add(
           new Tweened<Text>(n.label).to(
-            {
-              alpha: 1,
-              scale: { x: activeScale, y: activeScale },
-            },
+            { alpha: 1, scale: { x: activeScale, y: activeScale } },
+            100,
+          ),
+        )
+      } else if (hoveredNeighbours.has(nodeId)) {
+        tweenGroup.add(
+          new Tweened<Text>(n.label).to(
+            { alpha: 1, scale: { x: defaultScale, y: defaultScale } },
+            100,
+          ),
+        )
+      } else if (hoveredNodeId !== null) {
+        tweenGroup.add(
+          new Tweened<Text>(n.label).to(
+            { alpha: 0.05, scale: { x: defaultScale, y: defaultScale } },
             100,
           ),
         )
       } else {
         tweenGroup.add(
           new Tweened<Text>(n.label).to(
-            {
-              alpha: n.label.alpha,
-              scale: { x: defaultScale, y: defaultScale },
-            },
+            { alpha: n.label.alpha, scale: { x: defaultScale, y: defaultScale } },
             100,
           ),
         )
@@ -499,14 +507,14 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
         [0, 0],
         [width, height],
       ])
-      .scaleExtent([0.25, 4])
+      .scaleExtent([0.1, 4])
       .on("zoom", ({ transform }) => {
         currentTransform = transform
         stage.scale.set(transform.k, transform.k)
         stage.position.set(transform.x, transform.y)
 
         const zoomK = transform.k * opacityScale
-        let scaleOpacity = Math.max((zoomK - 1) / 3.75, 0)
+        const scaleOpacity = Math.min(Math.max((zoomK - 0.3) / 1.0, 0), 1)
         const activeNodes = nodeRenderData.filter((n) => n.active).flatMap((n) => n.label)
 
         for (const label of labelsContainer.children) {
@@ -519,13 +527,17 @@ async function renderGraph(graph: HTMLElement, fullSlug: FullSlug) {
     const canvasSelection = select<HTMLCanvasElement, NodeData>(app.canvas)
     canvasSelection.call(zoomBehavior)
 
-    // Apply initial zoom centered on canvas
-    const cx = width / 2
-    const cy = height / 2
-    const initialTransform = zoomIdentity
-      .translate(cx * (1 - scale), cy * (1 - scale))
-      .scale(scale)
-    canvasSelection.call(zoomBehavior.transform, initialTransform)
+    // Settle the simulation then fit all nodes into view (adapts to any screen size)
+    simulation.stop()
+    simulation.tick(300)
+    const xs = graphData.nodes.map((n) => (n.x ?? 0) + width / 2)
+    const ys = graphData.nodes.map((n) => (n.y ?? 0) + height / 2)
+    const [minX, maxX] = [Math.min(...xs), Math.max(...xs)]
+    const [minY, maxY] = [Math.min(...ys), Math.max(...ys)]
+    const fitK = Math.min((width * 0.85) / (maxX - minX || 1), (height * 0.85) / (maxY - minY || 1))
+    const fitTx = width / 2 - fitK * ((minX + maxX) / 2)
+    const fitTy = height / 2 - fitK * ((minY + maxY) / 2)
+    canvasSelection.call(zoomBehavior.transform, zoomIdentity.translate(fitTx, fitTy).scale(fitK))
   }
 
   let stopAnimation = false
