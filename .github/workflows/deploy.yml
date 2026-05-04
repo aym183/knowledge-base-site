@@ -30,7 +30,8 @@ jobs:
         with:
           repository: aym183/obsidian-knowledge-base
           path: content
-          fetch-depth: 0
+          fetch-depth: 1
+          token: ${{ secrets.SOURCE_REPO_TOKEN }}
 
       - name: Ensure content/index.md exists
         run: |
